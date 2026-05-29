@@ -178,11 +178,12 @@ export async function clip(options: ClipOptions): Promise<ClipResult> {
 
 	// Use pre-parsed document if provided, otherwise parse
 	const doc = parsedDocument ?? documentParser.parseFromString(html, 'text/html');
-	const documentElement = doc.documentElement || doc;
 
-	// Extract content with defuddle
+	// Extract content with defuddle.
+	// Defuddle expects the Document object (it reads document.title, builds candidate
+	// trees, etc.) — passing documentElement (the <html> element) yields empty results.
 	// Cast through unknown: linkedom's Document is structurally compatible but not nominally typed as DOM Document
-	const defuddle = new DefuddleClass(documentElement as unknown as Document, { url });
+	const defuddle = new DefuddleClass(doc as unknown as Document, { url });
 	const defuddleResult = defuddle.parse();
 
 	// Convert to markdown

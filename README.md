@@ -17,6 +17,70 @@ Install the extension by downloading it from the official directory for your bro
 
 Documentation is available on the [Obsidian Help site](https://help.obsidian.md/web-clipper), which covers how to use [highlighting](https://help.obsidian.md/web-clipper/highlight), [templates](https://help.obsidian.md/web-clipper/templates), [variables](https://help.obsidian.md/web-clipper/variables), [filters](https://help.obsidian.md/web-clipper/filters), and more.
 
+## Command-line interface (CLI)
+
+The same clipping engine is also available as a command-line tool. Give it a URL and a template, and it fetches the page, extracts the main content, converts it to Markdown, and prints an Obsidian-ready note — identical to what the browser extension produces.
+
+### Install
+
+```
+npm install -g @mejazbese21/obsidian-clipper-cli
+```
+
+Or run it without installing:
+
+```
+npx @mejazbese21/obsidian-clipper-cli <url> -t template.json
+```
+
+### Quick start
+
+```
+obsidian-clipper https://example.com/article -t template.json
+```
+
+A ready-to-use default **Clippings** template ships as [`template.json`](/template.json). Copy it, tweak the properties, and point `-t` at your own file. Run `obsidian-clipper --help` at any time for the full guide.
+
+### Common uses
+
+```
+# Save to a file instead of printing
+obsidian-clipper https://example.com/article -t template.json -o note.md
+
+# Clip HTML you already saved (no network request); use "-" for stdin
+obsidian-clipper https://example.com/article -t template.json --html page.html
+
+# Send the note straight into an Obsidian vault
+obsidian-clipper https://example.com/article -t template.json --open --vault "My Vault"
+
+# Auto-match a template from a folder, by the URL it triggers on
+obsidian-clipper https://example.com/article -t ./templates/
+```
+
+### Options
+
+| Option | Description |
+| --- | --- |
+| `-t, --template <path>` | Template JSON file, or a directory of templates (required). A directory auto-matches by URL triggers. |
+| `-o, --output <path>` | Write the note to this `.md` file (default: stdout). |
+| `--html <path>` | Use HTML from a file instead of fetching the URL (`-` reads stdin). |
+| `--vault <name>` | Obsidian vault name (with `--open`). |
+| `--open` | Send the note to Obsidian instead of printing it. |
+| `--uri` | With `--open`, use the `obsidian://` URI scheme. |
+| `--silent` | With `--uri`, don't steal focus from the terminal. |
+| `--property-types <path>` | JSON mapping property names to types (`text`, `multitext`, `number`, `checkbox`, `date`, `datetime`). |
+| `-h, --help` | Show the full usage guide. |
+
+Templates, variables, and filters work exactly as they do in the extension — see the [templates](https://help.obsidian.md/web-clipper/templates), [variables](https://help.obsidian.md/web-clipper/variables), and [filters](https://help.obsidian.md/web-clipper/filters) docs.
+
+### Build the CLI from source
+
+```
+npm run build:cli
+```
+
+This bundles the CLI to `dist/cli.cjs`.
+
 ## Contribute
 
 ### Translations

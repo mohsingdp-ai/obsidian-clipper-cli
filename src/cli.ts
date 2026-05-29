@@ -25,25 +25,76 @@ interface CliArgs {
 
 function printUsage(): void {
 	const usage = `
-Usage: obsidian-clipper <url> [options]
+obsidian-clipper — clip a web page into an Obsidian-ready Markdown note.
 
-Options:
-  -t, --template <path>        Path to template JSON file or directory (required)
-                               If a directory, auto-matches template by URL triggers
-  -o, --output <path>          Output .md file path (default: stdout)
-      --html <path>            Read HTML from file instead of fetching URL (use - for stdin)
-      --vault <name>           Obsidian vault name
-      --open                   Send to Obsidian instead of writing file
-      --uri                    Use URI scheme instead of Obsidian CLI
-      --silent                 Suppress Obsidian focus (URI mode)
-      --property-types <path>  JSON mapping property names to types
-  -h, --help                   Show this help message
+Fetches a URL (or reads saved HTML), extracts the main content, converts it to
+Markdown, and applies a template to produce a note with YAML frontmatter — the
+same output as the Obsidian Web Clipper browser extension.
+
+USAGE
+  obsidian-clipper <url> -t <template> [options]
+
+ARGUMENTS
+  <url>                        The page to clip (e.g. https://example.com/article)
+
+OPTIONS
+  -t, --template <path>        Template JSON file, or a directory of templates
+                               (required). With a directory, the template whose
+                               triggers match <url> is selected automatically.
+  -o, --output <path>          Write the note to this .md file (default: stdout)
+      --html <path>            Use HTML from a file instead of fetching <url>
+                               (use "-" to read HTML from stdin)
+      --vault <name>           Obsidian vault name (used with --open)
+      --open                   Send the note to Obsidian instead of printing it
+      --uri                    With --open, use the obsidian:// URI scheme
+      --silent                 With --uri, don't steal focus from your terminal
+      --property-types <path>  JSON object mapping property names to types
+                               (text | multitext | number | checkbox | date | datetime)
+  -h, --help                   Show this help
+
+EXAMPLES
+  # Print a clipped note to the terminal
+  obsidian-clipper https://example.com/article -t template.json
+
+  # Save the note to a file
+  obsidian-clipper https://example.com/article -t template.json -o note.md
+
+  # Clip HTML you already saved (no network request)
+  obsidian-clipper https://example.com/article -t template.json --html page.html
+
+  # Pipe HTML in from another command
+  curl -sL https://example.com/article | obsidian-clipper https://example.com/article -t template.json --html -
+
+  # Send straight into an Obsidian vault
+  obsidian-clipper https://example.com/article -t template.json --open --vault "My Vault"
+
+  # Let a folder of templates auto-match by URL
+  obsidian-clipper https://example.com/article -t ./templates/
+
+TEMPLATES
+  A template is a JSON file describing the note: its name, save path, body
+  format, and frontmatter properties. Values use {{variables}} (e.g. {{title}},
+  {{content}}, {{url}}, {{date}}) and |filters (e.g. {{author|split:", "}}).
+  A ready-to-use default "Clippings" template ships as template.json — copy and
+  edit it to make your own.
+
+LEARN MORE
+  Templates:  https://help.obsidian.md/web-clipper/templates
+  Variables:  https://help.obsidian.md/web-clipper/variables
+  Filters:    https://help.obsidian.md/web-clipper/filters
 `.trim();
 	console.log(usage);
 }
 
 function parseArgs(argv: string[]): CliArgs {
 	const args = argv.slice(2);
+
+	// No arguments at all: show the guide rather than an error.
+	if (args.length === 0) {
+		printUsage();
+		process.exit(0);
+	}
+
 	let url = '';
 	let templatePath = '';
 	let outputPath: string | undefined;

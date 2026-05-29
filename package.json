@@ -1,9 +1,10 @@
 {
 	"name": "@mejazbese21/obsidian-clipper-cli",
-	"version": "1.6.4",
+	"version": "1.6.5",
 	"description": "Command-line web clipper that turns web pages into Obsidian markdown notes, based on the official Obsidian Web Clipper.",
 	"bin": {
-		"obsidian-clipper": "./dist/cli.cjs"
+		"obsidian-clipper": "./dist/cli.cjs",
+		"obsidian-clipper-cli": "./dist/cli.cjs"
 	},
 	"publishConfig": {
 		"access": "public"

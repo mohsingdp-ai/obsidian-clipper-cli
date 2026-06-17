@@ -335,7 +335,22 @@ async function main(): Promise<void> {
 	}
 }
 
-main().catch(err => {
-	console.error(err.message || err);
-	process.exit(1);
-});
+main().then(
+	() => {
+		// Node's built-in fetch (undici) holds sockets open in a keep-alive
+		// pool, which keeps the event loop alive for several seconds after the
+		// work is done. Exit explicitly so the CLI returns to the prompt
+		// immediately instead of appearing to hang until the user presses Enter.
+		process.exitCode = 0;
+		// Flush stdout before exiting so piped/redirected output isn't truncated.
+		if (process.stdout.writableLength === 0) {
+			process.exit(0);
+		} else {
+			process.stdout.once('drain', () => process.exit(0));
+		}
+	},
+	err => {
+		console.error(err.message || err);
+		process.exit(1);
+	}
+);

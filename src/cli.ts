@@ -13,7 +13,7 @@ import * as path from 'path';
 
 interface CliArgs {
 	url: string;
-	templatePath: string;
+	templatePath?: string;
 	outputPath?: string;
 	vault?: string;
 	open: boolean;
@@ -32,15 +32,16 @@ Markdown, and applies a template to produce a note with YAML frontmatter — the
 same output as the Obsidian Web Clipper browser extension.
 
 USAGE
-  obsidian-clipper <url> -t <template> [options]
+  obsidian-clipper <url> [options]
 
 ARGUMENTS
   <url>                        The page to clip (e.g. https://example.com/article)
 
 OPTIONS
-  -t, --template <path>        Template JSON file, or a directory of templates
-                               (required). With a directory, the template whose
-                               triggers match <url> is selected automatically.
+  -t, --template <path>        Template JSON file, or a directory of templates.
+                               Optional — when omitted, a built-in "Clippings"
+                               template is used. With a directory, the template
+                               whose triggers match <url> is selected automatically.
   -o, --output <path>          Write the note to this .md file (default: stdout)
       --html <path>            Use HTML from a file instead of fetching <url>
                                (use "-" to read HTML from stdin)
@@ -53,7 +54,10 @@ OPTIONS
   -h, --help                   Show this help
 
 EXAMPLES
-  # Print a clipped note to the terminal
+  # Print a clipped note using the built-in default template
+  obsidian-clipper https://example.com/article
+
+  # Print a clipped note with your own template
   obsidian-clipper https://example.com/article -t template.json
 
   # Save the note to a file
@@ -161,18 +165,34 @@ function parseArgs(argv: string[]): CliArgs {
 		process.exit(1);
 	}
 
-	if (!templatePath) {
-		console.error('Error: --template is required');
-		printUsage();
-		process.exit(1);
-	}
-
-	return { url, templatePath, outputPath, vault, open, silent, uri, propertyTypesPath, htmlPath };
+	return { url, templatePath: templatePath || undefined, outputPath, vault, open, silent, uri, propertyTypesPath, htmlPath };
 }
 
 // ---------------------------------------------------------------------------
 // Template loading
 // ---------------------------------------------------------------------------
+
+// Built-in "Clippings" template used when -t/--template is omitted. Kept in
+// sync with the repo's template.json. Embedded here (rather than read from
+// disk) so it ships inside the npm bundle, which only publishes dist/.
+const DEFAULT_TEMPLATE: Template = {
+	schemaVersion: '0.1.0',
+	name: 'Default',
+	behavior: 'create',
+	noteNameFormat: '{{title}}',
+	path: 'Clippings',
+	noteContentFormat: '{{content}}',
+	properties: [
+		{ name: 'title', value: '{{title}}', type: 'text' },
+		{ name: 'source', value: '{{url}}', type: 'text' },
+		{ name: 'author', value: '{{author|split:", "|wikilink|join}}', type: 'multitext' },
+		{ name: 'published', value: '{{published}}', type: 'date' },
+		{ name: 'created', value: '{{date}}', type: 'date' },
+		{ name: 'description', value: '{{description}}', type: 'text' },
+		{ name: 'tags', value: 'clippings', type: 'multitext' },
+	],
+	triggers: [],
+} as unknown as Template;
 
 const templateFilePaths = new Map<Template, string>();
 
@@ -204,21 +224,27 @@ const linkedomParser: DocumentParser = {
 async function main(): Promise<void> {
 	const args = parseArgs(process.argv);
 
-	// Determine if template path is a file or directory
-	const resolvedTemplatePath = path.resolve(args.templatePath);
-	const isDir = fs.statSync(resolvedTemplatePath).isDirectory();
 	let templates: Template[] | undefined;
 	let template: Template | undefined;
 
-	if (isDir) {
-		templates = loadTemplatesFromDir(resolvedTemplatePath);
-		if (templates.length === 0) {
-			console.error(`Error: No .json template files found in ${args.templatePath}`);
-			process.exit(1);
-		}
+	if (!args.templatePath) {
+		// No template supplied: fall back to the built-in "Clippings" template.
+		template = DEFAULT_TEMPLATE;
 	} else {
-		const templateRaw = fs.readFileSync(resolvedTemplatePath, 'utf-8');
-		template = JSON.parse(templateRaw);
+		// Determine if template path is a file or directory
+		const resolvedTemplatePath = path.resolve(args.templatePath);
+		const isDir = fs.statSync(resolvedTemplatePath).isDirectory();
+
+		if (isDir) {
+			templates = loadTemplatesFromDir(resolvedTemplatePath);
+			if (templates.length === 0) {
+				console.error(`Error: No .json template files found in ${args.templatePath}`);
+				process.exit(1);
+			}
+		} else {
+			const templateRaw = fs.readFileSync(resolvedTemplatePath, 'utf-8');
+			template = JSON.parse(templateRaw);
+		}
 	}
 
 	// Load optional property types

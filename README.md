@@ -19,7 +19,7 @@ Documentation is available on the [Obsidian Help site](https://help.obsidian.md/
 
 ## Command-line interface (CLI)
 
-The same clipping engine is also available as a command-line tool. Give it a URL and a template, and it fetches the page, extracts the main content, converts it to Markdown, and prints an Obsidian-ready note — identical to what the browser extension produces.
+The same clipping engine is also available as a command-line tool. Give it a URL, and it fetches the page, extracts the main content, converts it to Markdown, and prints an Obsidian-ready note — identical to what the browser extension produces.
 
 ### Install
 
@@ -27,23 +27,31 @@ The same clipping engine is also available as a command-line tool. Give it a URL
 npm install -g @mejazbese21/obsidian-clipper-cli
 ```
 
-Or run it without installing:
-
-```
-npx @mejazbese21/obsidian-clipper-cli <url> -t template.json
-```
+This adds the `obsidian-clipper` command to your PATH.
 
 ### Quick start
+
+```
+obsidian-clipper https://example.com/article
+
+# For example:
+obsidian-clipper https://docs.equalsmoney.com/
+```
+
+That's it — with no template, a built-in **Clippings** template is used (title, source, author, dates, description, and a `clippings` tag). To customize the note, pass your own template with `-t`:
 
 ```
 obsidian-clipper https://example.com/article -t template.json
 ```
 
-A ready-to-use default **Clippings** template ships as [`template.json`](/template.json). Copy it, tweak the properties, and point `-t` at your own file. Run `obsidian-clipper --help` at any time for the full guide.
+A ready-to-use copy of the default template ships as [`template.json`](/template.json) — copy it, tweak the properties, and point `-t` at your own file. Run `obsidian-clipper --help` at any time for the full guide.
 
 ### Common uses
 
 ```
+# Clip with the built-in default template
+obsidian-clipper https://example.com/article
+
 # Save to a file instead of printing
 obsidian-clipper https://example.com/article -t template.json -o note.md
 
@@ -61,7 +69,7 @@ obsidian-clipper https://example.com/article -t ./templates/
 
 | Option | Description |
 | --- | --- |
-| `-t, --template <path>` | Template JSON file, or a directory of templates (required). A directory auto-matches by URL triggers. |
+| `-t, --template <path>` | Template JSON file, or a directory of templates. Optional — when omitted, a built-in **Clippings** template is used. A directory auto-matches by URL triggers. |
 | `-o, --output <path>` | Write the note to this `.md` file (default: stdout). |
 | `--html <path>` | Use HTML from a file instead of fetching the URL (`-` reads stdin). |
 | `--vault <name>` | Obsidian vault name (with `--open`). |
